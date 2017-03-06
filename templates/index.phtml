@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>W3.CSS Template</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="https://www.w3schools.com/lib/w3.css">
+<link rel='stylesheet' href='https://fonts.googleapis.com/css?family=Roboto'>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+<script src="https://www.w3schools.com/lib/w3.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+
+<style>
+    html,body,h1,h2,h3,h4,h5,h6 {font-family: "Roboto", sans-serif}
+</style>
+</head>
+<body class="w3-light-grey">
+    <header class="w3-container w3-teal w3-center w3-margin-top">
+        <h2>Olapic App</h2>
+    </header>
+    <!-- Page Container -->
+    <div class="w3-content w3-margin-top" style="max-width:1400px;">
+        <!-- The Grid -->
+        <div class="w3-row-padding">
+
+            <!-- Left Column -->
+            <div class="w3-third">
+                <div class="w3-white w3-text-grey w3-card-4">
+                    <div class="w3-container">
+                        <h2>Customer Info</h2>
+<!--                        <input oninput="w3.filterHTML('#customers', 'li', this.value)" placeholder="Search for names..">-->
+                        ID: <span id="customer_id"><?php echo $result[ 'customer'][ 'id'] ?></span><br/>
+                        Name: <?php echo $result['customer'][ 'name']; ?><br/>
+                        Language: <?php echo $result['customer']['language'] ?><br/>
+                        <li media-type="user"><a href="https:<?php echo $result[ 'customer']['_embedded']['user']['_links']['self']['href']; ?>">View User Information</a></li>
+                        <hr/>
+                        <a href="https:<?php echo $result['customer']['_embedded']['media']['_links']['self']['href']; ?>">View Media</a>
+                        <ul id="media_links">
+                            <li media-type="recent" customer-id="<?php echo $result[ 'customer']['id']; ?>">View Media</li>
+                            <li media-type="recent"  customer-id="<?php echo $result[ 'customer']['id']; ?>" >View Recent Media</li>
+                            <li media-type="shuffled" customer-id="<?php echo $result[ 'customer']['id']; ?>">View Shuffled Media</li>
+                            <li media-type="photorank" customer-id="<?php echo $result[ 'customer']['id']; ?>">View Photo Ranked Media</li>
+                            <li media-type="rated" customer-id="<?php echo $result[ 'customer']['id']; ?>">View Rated Media</li>
+                        </ul>
+                    </div>
+                </div><br>
+
+                <!-- End Left Column -->
+            </div>
+
+            <!-- Right Column -->
+            <div class="w3-twothird">
+                <div class="w3-container w3-card-2 w3-white">
+                    <h2 class="w3-text-grey w3-padding-16">Customer Images will show below</h2>
+                    <div class="w3-container" id="images">
+                    </div>
+                </div>
+
+                <!-- End Right Column -->
+            </div>
+
+            <!-- End Grid -->
+        </div>
+
+        <!-- End Page Container -->
+    </div>
+
+    <footer class="w3-container w3-teal w3-center w3-margin-top">
+        <p>Powered by <a href="https://www.w3schools.com/w3css/default.asp" target="_blank">w3.css</a></p>
+    </footer>
+    </body>
+</html>
+<script src="https://frontend-lab.s3.amazonaws.com/pi-test-console/sdk.min.js"></script>
+<script>
+    //  w3.getHttpObject("/customers", myFunction);
+
+
+    /*
+     function myFunction(myObject) {
+     w3.displayObject("id01", myObject);
+     }
+     */
+
+    var customers = {
+        init:function(){
+//            this.loadCustomers();
+             this.events();
+        },
+        events:function(){
+            $( 'ul#media_links li').on( 'click', this.loadCustomerImages );
+            $( 'DIV#images').on('click', 'button.addImages', this.sendImage);
+        },
+        sendImage:function(){
+            var id= $(this).attr( 'image-id');
+            var caption = $( this).attr( 'image-caption' );
+            var url = $( this).attr( 'image-url');
+
+            var sdk = new OlapicPartnerSdk();
+           if(sdk.sendMedia({
+                url: url,
+                caption: caption
+            })){
+               $(this).attr("disabled","disabled");
+           }
+        },
+        loadCustomerImages:function(){
+            var id =  $( '#customer_id').html( );
+            var media_type = $( this).attr( 'media-type' );
+            var url = '/customers/'+id+'/'+media_type;
+
+            $.ajax({
+                url:url,
+                method:'GET',
+                dataType:'json'
+            }).done(function( data){
+                $( 'div#images').html( '' );
+                for( x in data ){
+                    var image = data[ x];
+                    if( x%4 == 0 ){
+                        $divContainer = $( '<div class="w3-row"></div>');
+                    }
+                    $divContainer.append( $( '<div class="w3-quarter"></div>').append( '<div class="w3-card-2" style="margin: 3px;"><image class="w3-image" width="100%" src="'+image.images.thumbnail+'"><div class="w3-container"><button class="addImages" image-id="'+image.id+'" data-caption="'+image.caption+'" image-url="'+image.images.normal+'">Add To Partner App</button></div></div>'));
+                    if( x%4 == 3){
+                        $('div#images').append( $divContainer );
+                    }
+                }
+            }).fail();
+        },
+        loadCustomer:function(){
+            var id = $( '#customer_id').text();
+            var media_type = $( this).attr( 'media-type' );
+            $.ajax({
+                url:'/customers/'+id+'/'+media_type,
+                method:'GET',
+                dataType: 'json'
+            }).done( function(  data ){
+                var media = data.media;
+                for( x in media ){
+                    $( 'ul#customers').append($( '<li>' ).text( customers[x].name).attr( 'data-id', customers[ x].id) );
+                }
+            } ).fail();
+        }
+    };
+
+    $(function(){
+        customers.init();
+    });
+
+</script>
